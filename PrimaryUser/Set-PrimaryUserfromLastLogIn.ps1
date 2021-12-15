@@ -116,7 +116,7 @@ $authority = "https://login.microsoftonline.com/$Tenant"
     $platformParameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
 
     $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($User, "OptionalDisplayableId")
-
+    
     $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI,$clientId,$redirectUri,$platformParameters,$userId).Result
 
         # If the accesstoken is valid then create the authentication header
@@ -464,12 +464,15 @@ Foreach ($Device in $Devices){
 
         }
 
-        #Get the objectID of the last logged in user for the device, which is the last object in the list of usersLoggedOn
-        $LastLoggedInUser = ($Device.usersLoggedOn[-1]).userId
+        #If there is a logged on user continue setting the primary user..
+        if($Device.usersLoggedOn){
+            
+            #Get the objectID of the last logged in user for the device, which is the last object in the list of usersLoggedOn
+            $LastLoggedInUser = ($Device.usersLoggedOn[-1]).userId
 
-        #Using the objectID, get the user from the Microsoft Graph for logging purposes
-        $User = Get-AADUser -userPrincipalName $LastLoggedInUser
-    
+            #Using the objectID, get the user from the Microsoft Graph for logging purposes
+            $User = Get-AADUser -userPrincipalName $LastLoggedInUser
+        
             #Check if the current primary user of the device is the same as the last logged in user
             if($IntuneDevicePrimaryUser -notmatch $User.id){
 
@@ -489,6 +492,9 @@ Foreach ($Device in $Devices){
                 Write-Host "The user '$($User.displayName)' is already the Primary User on the device..." -ForegroundColor Yellow
 
             }
+        }else {
+            Write-Host "No logged in users found on the device..." -ForegroundColor Yellow
+        }
 
     Write-Host
 
